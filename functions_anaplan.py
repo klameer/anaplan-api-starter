@@ -3,9 +3,10 @@ import requests
 import json
 import time
 from dotenv import load_dotenv
-#import pandas as pd
-#from logger import logger
 import sys
+import pandas as pd
+import io
+
 
 load_dotenv()
 # set global vars
@@ -234,25 +235,6 @@ def upload_content_as_single_chunk(fileId, content):
         return False
 
 
-def upload_df_as_single_chunk(fileId, df):
-    """For files < 50mb"""
-    path = f'/workspaces/{workspaceId}/models/{modelId}/files/{fileId}'
-    url = domain + path
-    headers = {
-    'Authorization': f'AnaplanAuthToken {anaplan_auth_token}',
-    'Content-Type': 'application/octet-stream'
-    }
-
-    content = df.to_csv(index=False)
-
-    #file = open(filename, 'rb')
-    response = requests.request('PUT', url=url, data=content, headers=headers)
-
-    if response.status_code == 204:
-        return f'Uploaded {fileId} with status code {response.status_code}'
-    else:
-        error_dump('upload_file_as_single_chunk', response)
-        return False
 
 
 
@@ -304,7 +286,7 @@ def get_file_id(fileName):
     for item in response['files']:
         if item['name'] == fileName:
             return item['id']
-    print("Couldn't find file")
+    print("Cant't find file")
     return False
 
 
@@ -341,7 +323,7 @@ def get_export_task_status(exportId, taskId):
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        #return response.json()
+        print(response.json())
         return response.json()['task']['taskState']
 
     else:
@@ -433,7 +415,7 @@ def get_import_task_status(importId, taskId):
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['task']['taskState']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -495,6 +477,15 @@ def list_processes():
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
         return False
+
+def get_process_id(processName):
+    response = list_processes()
+    for item in response['processes']:
+        if item['name'] == processName:
+            return item['id']
+    print("Cant't find process")
+    return False
+
 
 
 def get_process_metadata(processId):
@@ -643,7 +634,8 @@ def get_export_id(exportName):
     return False
 
 
-def start_export_till_end(exportId, max_tries=20):
+
+def run_export_till_complete(exportId, max_tries=20):
     """Runs an export till task status is complete"""
     r3 = start_export(exportId)
     taskId = r3['task']['taskId']
@@ -655,6 +647,26 @@ def start_export_till_end(exportId, max_tries=20):
         count += 1
         print(f'Check Status for task {taskId}: {count}')
         status = get_export_task_status(exportId, taskId)
+
+    if count == max_tries:
+        return 'Failed to complete within max_tries'
+    else:
+        return status
+
+
+def run_import_till_complete(importId, max_tries=20):
+    """Runs an export till task status is complete"""
+    r3 = start_import(importId)
+    taskId = r3['task']['taskId']
+    time.sleep(1)
+    status = get_import_task_status(importId, taskId)
+
+    count = 0
+    while status != 'COMPLETE' or count == max_tries:
+        time.sleep(1)
+        count += 1
+        print(f'Check Status for task {taskId}: {count}')
+        status = get_import_task_status(importId, taskId)
 
     if count == max_tries:
         return 'Failed to complete within max_tries'
@@ -680,11 +692,14 @@ def download_export_file(fileId, filename):
 
     return 'OK'
 
-################ NEW #######################
-import pandas as pd
-import io
 
-def download_export_as_df(exportId):
+def download_export_as_df(exportId, run_export=True):
+    """Downloads an export file after running the export action"""
+    if run_export:
+        resp = run_export_till_complete(exportId)
+        if resp == 'Failed to complete within max_tries':
+            print('Failed to run export')
+            return 'Failed to run export'
 
     url = f'https://api.anaplan.com/2/0/workspaces/{workspaceId}/models/{modelId}/files/{exportId}/chunks/0'
 
@@ -700,7 +715,7 @@ def download_export_as_df(exportId):
 
     return df
 
-################## NEW #################
+
 
 def run_export_and_download(exportId, fileId, sleep=2):
     """Runs an export, waits for 2 seconds and downloads the file"""
@@ -716,52 +731,38 @@ def run_export_and_download(exportId, fileId, sleep=2):
 
     return response
 
+def upload_df_as_single_chunk(fileId, df):
+    """For files < 50mb"""
+    path = f'/workspaces/{workspaceId}/models/{modelId}/files/{fileId}'
+    url = domain + path
+    headers = {
+    'Authorization': f'AnaplanAuthToken {anaplan_auth_token}',
+    'Content-Type': 'application/octet-stream'
+    }
+
+    content = df.to_csv(index=False)
+
+    #file = open(filename, 'rb')
+    response = requests.request('PUT', url=url, data=content, headers=headers)
+
+    if response.status_code == 204:
+        return f'Uploaded {fileId} with status code {response.status_code}'
+    else:
+        error_dump('upload_file_as_single_chunk', response)
+        return False
+
+
+def upload_df_and_run_import(fileId, importId, df):
+    """Uploads a DataFrame into an Anaplan file and runs the import action"""
+    upload_df_as_single_chunk(fileId, df)
+    resp = run_import_till_complete(importId)
+    return resp
+
+
 anaplan_auth_token = get_auth_token()
 
 
 if __name__ == '__main__':
-
     pass
-    # workspaceName = 'Exscientia Limited - FP&A Workspace'
-    # modelName = 'Clinical Studies PoC - Exscientia V2'
-    # upload_file = 'D Test Upload.csv'
-    # filename = 'Automated NetSuite Actuals'
-    # importIdName = 'NetSuite Actuals - Automated from df_final.csv'
-    # deleteActionName = 'Delete Automated NetSuite Actuals'
-    #
-    # workspaceId = '8a868cd97a25f8cd017a53e92143333a'
-    # modelId = '548EB5E07E1E4E78B7BBDDCA0FA44447'
-    # fileId = '113000000220'
-    # importId = '112000000257'
-    # deleteActionId = '117000000061'
-    #
-    #
-    # automated_actuals_exportId = '116000000029'
-    # automated_export_filename = 'Automated NetSuite Actuals'
-    # automated_export_fileId = '116000000029'
-    #
-    #
-    # print(f'workspaceId:    {workspaceId:=>40}')
-    # print(f'modelId:        {modelId:=>40}')
-    # print(f'fileId:         {fileId:=>40}')
-    # print(f'importId:       {importId:=>40}')
-    # print(f'deleteActionId: {deleteActionId:=>40}')
-    #
-    # # Delete Items
-    #
-    # print(f'{"delete list":=<50}')
-    # response = run_action(deleteActionId)
-    # print(response)
-    #
-    # print(f'{"upload file":=<50}')
-    # response = upload_file_as_single_chunk('113000000221', 'responses/df_final.csv')
-    # print(response)
-    # print('='*50)
-    #
-    # # Run Import Action
-    # print(f'{"run import action":=<50}')
-    # response = run_import(importId)
-    # print(response)
-    #
 
 
