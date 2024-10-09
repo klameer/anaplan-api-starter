@@ -1,8 +1,9 @@
+from functions_anaplan import list_files
 
-from functions_general import get_general_parameter
-from functions_general import set_general_parameter
+def files():
+    l = list_files()
+    return [f['name'] for f in l['files']]
 
-#set_general_parameter('RUNNING_AUTOMATED_ACTUALS', False)
+if __name__ == '__main__':
+    print(files())
 
-p = get_general_parameter('RUNNING_AUTOMATED_ACTUALS')
-print(p)
