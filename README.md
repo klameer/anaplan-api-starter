@@ -36,8 +36,19 @@ copy config\.env .
 
 
 ## Functions
-### get id's of integration items
 
+### List Items
+* list_models
+* list_export_files
+* list_exports
+* list_user_workspaces
+* list_imports
+* list_files
+* list_delete_actions
+* list_processes
+
+### get id's of integration items using names
+* get_model_id
 * get_import_id
 * get_file_id
 * get_export_id
@@ -45,8 +56,6 @@ copy config\.env .
 * get_workspace_id
 * get_model_id
 
-
 ### download upload functions
 * download_export_as_df
 * upload_df_and_run_import
-

@@ -50,7 +50,7 @@ def list_user_workspaces():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['workspaces']
     else:
         print(f'Request failed with status code {response.status_code}')
         print(response.json())
@@ -72,7 +72,7 @@ def retrieve_workspace_information(workspaceId):
         print(response.json())
         return False
 
-def retrieve_models():
+def list_models():
     """Retrieves information about all models in the user's default tenant."""
     path = f'/models'
     url = domain + path
@@ -83,7 +83,7 @@ def retrieve_models():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['models']
     else:
         print(f'Request failed with status code {response.status_code}')
         print(response.json())
@@ -177,8 +177,8 @@ def get_the_id_and_information_for_the_model_file_to_upload(workspaceId, modelId
 
 def get_model_id(modelName):
     """Get Model Id from Name"""
-    response = retrieve_models()
-    for model in response['models']:
+    response = list_models()
+    for model in response:
         if model['name'] == modelName:
             return model['id']
     print("Couldn't find model")
@@ -188,7 +188,7 @@ def get_model_id(modelName):
 def get_workspace_id(workspaceName):
     """Get Workspace Id from Name"""
     response = list_user_workspaces()
-    for workspace in response['workspaces']:
+    for workspace in response:
         if workspace['name'] == workspaceName:
             return workspace['id']
 
@@ -235,9 +235,6 @@ def upload_content_as_single_chunk(fileId, content):
         return False
 
 
-
-
-
 def list_imports():
     path = f'/workspaces/{workspaceId}/models/{modelId}/imports'
     url = domain + path
@@ -248,7 +245,7 @@ def list_imports():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['imports']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -257,7 +254,7 @@ def list_imports():
 
 def get_import_id(importIdName):
     response = list_imports()
-    for item in response['imports']:
+    for item in response:
         if item['name'] == importIdName:
             return item['id']
     print("Couldn't find file")
@@ -274,7 +271,7 @@ def list_files():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['files']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -283,7 +280,7 @@ def list_files():
 
 def get_file_id(fileName):
     response = list_files()
-    for item in response['files']:
+    for item in response:
         if item['name'] == fileName:
             return item['id']
     print("Cant't find file")
@@ -442,7 +439,7 @@ def list_delete_actions():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['actions']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -451,7 +448,7 @@ def list_delete_actions():
 
 def get_delete_action_id(deleteActionName):
     response = list_delete_actions()
-    for item in response['actions']:
+    for item in response:
         if item['name'] == deleteActionName:
             return item['id']
 
@@ -472,7 +469,7 @@ def list_processes():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['processes']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -480,7 +477,7 @@ def list_processes():
 
 def get_process_id(processName):
     response = list_processes()
-    for item in response['processes']:
+    for item in response:
         if item['name'] == processName:
             return item['id']
     print("Cant't find process")
@@ -578,7 +575,7 @@ def list_exports():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['exports']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -616,7 +613,7 @@ def list_export_files():
 
     response = requests.request('GET', url=url, headers=headers)
     if response.status_code == 200:
-        return response.json()
+        return response.json()['files']
     else:
         print(f'URL: {url} \nRequest failed with status code {response.status_code}')
         print(response.json())
@@ -626,7 +623,7 @@ def list_export_files():
 def get_export_id(exportName):
     """Get the ID of an export name"""
     response = list_exports()
-    for item in response['exports']:
+    for item in response:
         if item['name'] == exportName:
             return item['id']
 

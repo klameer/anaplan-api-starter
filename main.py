@@ -1,9 +1,6 @@
-from functions_anaplan import list_files
+from functions_anaplan import download_export_as_df
 
-def files():
-    l = list_files()
-    return [f['name'] for f in l['files']]
+[{'id': '116000000237', 'name': 'EXP: Export Revenue', 'exportType': 'GRID_CURRENT_PAGE', 'exportFormat': 'text/csv', 'encoding': 'UTF-8', 'layout': 'GRID_CURRENT_PAGE'}]
 
-if __name__ == '__main__':
-    print(files())
-
+df = download_export_as_df(exportId='116000000237', )
+print(df.columns)
