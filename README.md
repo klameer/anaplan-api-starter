@@ -57,5 +57,5 @@ copy config\.env .
 * get_model_id
 
 ### download upload functions
-* download_export_as_df
-* upload_df_and_run_import
+* download_export_as_df(exportId)
+* upload_df_and_run_import(fileId, importId, df)
